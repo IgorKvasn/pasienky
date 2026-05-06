@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { TimetableResponse } from './timetable.types';
+import { DateRange, TimetableResponse } from './timetable.types';
 
 @Injectable({ providedIn: 'root' })
 export class TimetableService {
@@ -11,5 +11,9 @@ export class TimetableService {
     return this.httpClient.get<TimetableResponse>('/api/timetable', {
       params: { from, to }
     });
+  }
+
+  getDateRange(): Observable<DateRange> {
+    return this.httpClient.get<DateRange>('/api/timetable/date-range');
   }
 }

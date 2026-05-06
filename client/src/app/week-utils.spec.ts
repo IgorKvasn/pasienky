@@ -1,5 +1,5 @@
 import { vi } from 'vitest';
-import { getWeekRange, getWeekDates, buildTimelineDays, isCurrentWeek } from './week-utils';
+import { getWeekRange, getWeekDates, getAdjacentWeekRange, buildTimelineDays, isCurrentWeek } from './week-utils';
 
 describe('getWeekRange', () => {
   it('returns a Monday to Sunday range', () => {
@@ -17,6 +17,24 @@ describe('getWeekDates', () => {
       '2026-05-11', '2026-05-12', '2026-05-13', '2026-05-14',
       '2026-05-15', '2026-05-16', '2026-05-17'
     ]);
+  });
+});
+
+describe('getAdjacentWeekRange', () => {
+  it('returns previous week range', () => {
+    const date = new Date('2026-05-13T12:00:00Z');
+    expect(getAdjacentWeekRange(date, -1)).toEqual({
+      from: '2026-05-04',
+      to: '2026-05-10'
+    });
+  });
+
+  it('returns next week range', () => {
+    const date = new Date('2026-05-13T12:00:00Z');
+    expect(getAdjacentWeekRange(date, 1)).toEqual({
+      from: '2026-05-18',
+      to: '2026-05-24'
+    });
   });
 });
 

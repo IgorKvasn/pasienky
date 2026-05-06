@@ -4,7 +4,7 @@ import type { TimetableRepository } from '../database/timetableRepository.js';
 export interface AppDependencies {
   parseTriggerToken: string;
   importTimetable: () => Promise<{ id?: string; slotCount: number; finishedAt?: string | null }>;
-  repository: Pick<TimetableRepository, 'findSlots' | 'getLastSuccessfulImport'>;
+  repository: Pick<TimetableRepository, 'findSlots' | 'getLastSuccessfulImport' | 'getDateRange'>;
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -45,6 +45,15 @@ export function createApp(dependencies: AppDependencies) {
       ]);
 
       response.json({ slots, lastImport });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  app.get('/api/timetable/date-range', async (_request, response, next) => {
+    try {
+      const dateRange = await dependencies.repository.getDateRange();
+      response.json(dateRange ?? { minDate: null, maxDate: null });
     } catch (error) {
       next(error);
     }

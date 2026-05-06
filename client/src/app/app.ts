@@ -2,10 +2,11 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { catchError, of } from 'rxjs';
 import { TimetableService } from './timetable.service';
-import { TimetableResponse } from './timetable.types';
+import { DateRange, TimetableResponse } from './timetable.types';
 import {
   getWeekRange,
   getWeekDates,
+  getAdjacentWeekRange,
   buildTimelineDays,
   isCurrentWeek,
   TIMELINE_HOURS,
@@ -42,11 +43,26 @@ export class App {
   protected readonly isLoading = signal(true);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly response = signal<TimetableResponse>({ slots: [], lastImport: null });
+  protected readonly dateRange = signal<DateRange>({ minDate: null, maxDate: null });
   protected readonly weekRange = computed(() => getWeekRange(this.selectedDate()));
   protected readonly isCurrentWeek = computed(() => isCurrentWeek(this.selectedDate()));
   protected readonly hours = TIMELINE_HOURS;
   protected readonly legendEntries = Array.from({ length: 8 }, (_, i) => i + 1);
   protected readonly selectedDayIndex = signal(todayDayIndex());
+
+  protected readonly canGoBack = computed(() => {
+    const { minDate } = this.dateRange();
+    if (minDate === null) return true;
+    const previousWeek = getAdjacentWeekRange(this.selectedDate(), -1);
+    return previousWeek.to >= minDate;
+  });
+
+  protected readonly canGoForward = computed(() => {
+    const { maxDate } = this.dateRange();
+    if (maxDate === null) return true;
+    const nextWeek = getAdjacentWeekRange(this.selectedDate(), 1);
+    return nextWeek.from <= maxDate;
+  });
 
   protected readonly timelineDays = computed(() => {
     const weekDates = getWeekDates(this.selectedDate());
@@ -57,6 +73,9 @@ export class App {
 
   constructor() {
     this.loadWeek();
+    this.timetableService.getDateRange()
+      .pipe(catchError(() => of({ minDate: null, maxDate: null })))
+      .subscribe((dateRange) => this.dateRange.set(dateRange));
   }
 
   protected previousWeek(): void {

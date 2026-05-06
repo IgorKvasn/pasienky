@@ -23,15 +23,25 @@ describe('App', () => {
     req.flush({ slots, lastImport: null });
   }
 
+  function flushDateRange(minDate: string | null = null, maxDate: string | null = null) {
+    const req = httpTesting.expectOne(r => r.url === '/api/timetable/date-range');
+    req.flush({ minDate, maxDate });
+  }
+
+  function flushAll(slots: any[] = [], minDate: string | null = null, maxDate: string | null = null) {
+    flushTimetable(slots);
+    flushDateRange(minDate, maxDate);
+  }
+
   it('should create the app', () => {
     const fixture = TestBed.createComponent(App);
-    flushTimetable();
+    flushAll();
     expect(fixture.componentInstance).toBeTruthy();
   });
 
   it('should render heading', async () => {
     const fixture = TestBed.createComponent(App);
-    flushTimetable();
+    flushAll();
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Voľné plavecké dráhy');
@@ -40,7 +50,7 @@ describe('App', () => {
   describe('current week button', () => {
     it('hides the today button when viewing current week', async () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       fixture.detectChanges();
       await fixture.whenStable();
       const todayButton = fixture.nativeElement.querySelector('.today-button');
@@ -49,7 +59,7 @@ describe('App', () => {
 
     it('shows the today button after navigating to a different week', async () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       fixture.detectChanges();
 
       fixture.componentInstance['previousWeek']();
@@ -64,7 +74,7 @@ describe('App', () => {
 
     it('navigates back to current week when today button is clicked', async () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       fixture.detectChanges();
 
       fixture.componentInstance['previousWeek']();
@@ -85,7 +95,7 @@ describe('App', () => {
   describe('day selection', () => {
     it('defaults selectedDayIndex to today within the week', () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       const dayIndex = fixture.componentInstance['selectedDayIndex']();
       const todayJs = new Date().getDay();
       const expected = todayJs === 0 ? 6 : todayJs - 1;
@@ -94,7 +104,7 @@ describe('App', () => {
 
     it('changes selectedDay when selectDay is called', () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       fixture.detectChanges();
 
       fixture.componentInstance['selectDay'](3);
@@ -105,7 +115,7 @@ describe('App', () => {
 
     it('resets selectedDayIndex to 0 when navigating weeks', () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       fixture.detectChanges();
 
       fixture.componentInstance['selectDay'](5);
@@ -117,7 +127,7 @@ describe('App', () => {
 
     it('renders day tabs in the mobile timeline section', async () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       fixture.detectChanges();
       await fixture.whenStable();
 
@@ -127,7 +137,7 @@ describe('App', () => {
 
     it('marks the selected day tab as active', async () => {
       const fixture = TestBed.createComponent(App);
-      flushTimetable();
+      flushAll();
       fixture.detectChanges();
 
       fixture.componentInstance['selectDay'](2);
@@ -147,6 +157,7 @@ describe('App', () => {
         { id: '1', date: targetDate, startTime: '06:00', endTime: '08:00', availableLanes: 4, note: null },
         { id: '2', date: targetDate, startTime: '10:00', endTime: '12:00', availableLanes: 3, note: 'Test' }
       ]);
+      flushDateRange();
       fixture.detectChanges();
 
       fixture.componentInstance['selectDay'](0);
@@ -155,6 +166,75 @@ describe('App', () => {
 
       const rows = fixture.nativeElement.querySelectorAll('.day-slot-row');
       expect(rows.length).toBe(2);
+    });
+  });
+
+  describe('date range navigation', () => {
+    it('disables previous button when at min date boundary', async () => {
+      const fixture = TestBed.createComponent(App);
+      const weekRange = fixture.componentInstance['weekRange']();
+      flushAll([], weekRange.from, '2099-12-31');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const prevButton = fixture.nativeElement.querySelector('[aria-label="Predchádzajúci týždeň"]') as HTMLButtonElement;
+      expect(prevButton.disabled).toBe(true);
+    });
+
+    it('disables next button when at max date boundary', async () => {
+      const fixture = TestBed.createComponent(App);
+      const weekRange = fixture.componentInstance['weekRange']();
+      flushAll([], '2000-01-01', weekRange.to);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const nextButton = fixture.nativeElement.querySelector('[aria-label="Nasledujúci týždeň"]') as HTMLButtonElement;
+      expect(nextButton.disabled).toBe(true);
+    });
+
+    it('enables both buttons when within date range', async () => {
+      const fixture = TestBed.createComponent(App);
+      flushAll([], '2000-01-01', '2099-12-31');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const prevButton = fixture.nativeElement.querySelector('[aria-label="Predchádzajúci týždeň"]') as HTMLButtonElement;
+      const nextButton = fixture.nativeElement.querySelector('[aria-label="Nasledujúci týždeň"]') as HTMLButtonElement;
+      expect(prevButton.disabled).toBe(false);
+      expect(nextButton.disabled).toBe(false);
+    });
+  });
+
+  describe('lane count display', () => {
+    it('does not display 0 lane count in desktop segments', async () => {
+      const fixture = TestBed.createComponent(App);
+      const days = fixture.componentInstance['timelineDays']();
+      const targetDate = days[0]?.date;
+      flushAll([
+        { id: '1', date: targetDate, startTime: '06:00', endTime: '20:00', availableLanes: 0, note: null }
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const segmentLabels = fixture.nativeElement.querySelectorAll('.segment-label');
+      expect(segmentLabels.length).toBe(0);
+    });
+
+    it('does not display 0 lane count in mobile slot rows', async () => {
+      const fixture = TestBed.createComponent(App);
+      const days = fixture.componentInstance['timelineDays']();
+      const targetDate = days[0]?.date;
+      flushAll([
+        { id: '1', date: targetDate, startTime: '06:00', endTime: '08:00', availableLanes: 0, note: null }
+      ]);
+      fixture.detectChanges();
+
+      fixture.componentInstance['selectDay'](0);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const slotLanes = fixture.nativeElement.querySelectorAll('.slot-lanes');
+      expect(slotLanes.length).toBe(0);
     });
   });
 });

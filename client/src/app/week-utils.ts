@@ -76,6 +76,12 @@ export function buildTimelineDays(slots: TimetableSlot[], weekDates: string[]): 
   });
 }
 
+export function getAdjacentWeekRange(date: Date, direction: -1 | 1): { from: string; to: string } {
+  const shifted = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
+  shifted.setUTCDate(shifted.getUTCDate() + direction * 7);
+  return getWeekRange(shifted);
+}
+
 export function isCurrentWeek(date: Date): boolean {
   const now = new Date();
   const currentRange = getWeekRange(now);

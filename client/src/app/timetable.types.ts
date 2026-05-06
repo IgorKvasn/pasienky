@@ -22,3 +22,8 @@ export interface TimetableResponse {
   slots: TimetableSlot[];
   lastImport: ImportRunSummary | null;
 }
+
+export interface DateRange {
+  minDate: string | null;
+  maxDate: string | null;
+}

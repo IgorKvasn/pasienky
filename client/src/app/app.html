@@ -14,12 +14,12 @@
     </div>
 
     <div class="week-controls">
-      <button type="button" (click)="previousWeek()" aria-label="Predchádzajúci týždeň">&#8249;</button>
-      <strong>{{ weekRange().from }} – {{ weekRange().to }}</strong>
-      <button type="button" (click)="nextWeek()" aria-label="Nasledujúci týždeň">&#8250;</button>
       @if (!isCurrentWeek()) {
         <button type="button" class="today-button" (click)="goToCurrentWeek()">Dnes</button>
       }
+      <button type="button" (click)="previousWeek()" [disabled]="!canGoBack()" aria-label="Predchádzajúci týždeň">&#8249;</button>
+      <strong>{{ weekRange().from }} – {{ weekRange().to }}</strong>
+      <button type="button" (click)="nextWeek()" [disabled]="!canGoForward()" aria-label="Nasledujúci týždeň">&#8250;</button>
     </div>
   </header>
 
@@ -50,7 +50,7 @@
                 [style.background]="segmentColor(segment.lanes)"
                 [title]="segmentTooltip(segment)"
               >
-                @if (segment.widthPercent > 4) {
+                @if (segment.widthPercent > 4 && segment.lanes > 0) {
                   <span class="segment-label">{{ segment.lanes }}</span>
                 }
               </div>
@@ -61,6 +61,15 @@
           </div>
         </div>
       }
+
+      <div class="timeline-hours-header timeline-hours-footer">
+        <div class="timeline-day-label"></div>
+        <div class="timeline-hours-row">
+          @for (hour of hours; track hour) {
+            <span class="hour-label" [style.left.%]="hourTickLeft(hour)">{{ hour }}</span>
+          }
+        </div>
+      </div>
     </section>
 
     <section class="mobile-timeline" aria-label="Denný rozpis">
@@ -84,7 +93,9 @@
               <div class="day-slot-row">
                 <span class="slot-time">{{ segment.startTime }} – {{ segment.endTime }}</span>
                 <div class="slot-bar" [style.background]="segmentColor(segment.lanes)">
-                  <span class="slot-lanes">{{ segment.lanes }}</span>
+                  @if (segment.lanes > 0) {
+                    <span class="slot-lanes">{{ segment.lanes }}</span>
+                  }
                 </div>
                 @if (segment.note) {
                   <span class="slot-note">{{ segment.note }}</span>

@@ -199,6 +199,31 @@ describe('TimetableRepository', () => {
     ]);
   });
 
+  describe('getDateRange', () => {
+    test('returns null when no slots exist', async () => {
+      const pool = new FakePool(undefined, () => ({
+        rows: [{ min_date: null, max_date: null }]
+      }));
+      const repository = createRepository(pool);
+
+      await expect(repository.getDateRange()).resolves.toBeNull();
+      expect(pool.calls[0].text).toContain('MIN(slot_date)');
+      expect(pool.calls[0].text).toContain('MAX(slot_date)');
+    });
+
+    test('returns correct min and max dates when slots exist', async () => {
+      const pool = new FakePool(undefined, () => ({
+        rows: [{ min_date: '2026-05-01', max_date: '2026-05-31' }]
+      }));
+      const repository = createRepository(pool);
+
+      await expect(repository.getDateRange()).resolves.toEqual({
+        minDate: '2026-05-01',
+        maxDate: '2026-05-31'
+      });
+    });
+  });
+
   test('getLastSuccessfulImport returns the newest succeeded import or null', async () => {
     const pool = new FakePool(undefined, () => ({
       rows: [

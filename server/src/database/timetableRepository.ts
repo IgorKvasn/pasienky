@@ -164,6 +164,26 @@ export class TimetableRepository {
     return result.rows.map(mapTimetableSlot);
   }
 
+  async getDateRange(): Promise<{ minDate: string; maxDate: string } | null> {
+    const result = await this.pool.query<{ min_date: string | Date | null; max_date: string | Date | null }>(
+      `
+        SELECT MIN(slot_date) AS min_date,
+               MAX(slot_date) AS max_date
+        FROM timetable_slots
+      `
+    );
+
+    const row = result.rows[0];
+    if (!row?.min_date || !row?.max_date) {
+      return null;
+    }
+
+    return {
+      minDate: formatDate(row.min_date),
+      maxDate: formatDate(row.max_date)
+    };
+  }
+
   async getLastSuccessfulImport(): Promise<ImportRunSummary | null> {
     const result = await this.pool.query<ImportRunSummaryRow>(
       `

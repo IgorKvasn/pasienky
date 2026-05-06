@@ -27,6 +27,34 @@ describe('HTTP API', () => {
     expect(importTimetable).toHaveBeenCalledOnce();
   });
 
+  it('returns date range from repository', async () => {
+    const repository = fakeRepository();
+    const app = createApp({
+      parseTriggerToken: 'secret',
+      importTimetable: vi.fn(),
+      repository
+    });
+
+    const response = await request(app).get('/api/timetable/date-range').expect(200);
+
+    expect(response.body).toEqual({ minDate: '2026-05-01', maxDate: '2026-05-31' });
+    expect(repository.getDateRange).toHaveBeenCalledOnce();
+  });
+
+  it('returns nulls when no date range data exists', async () => {
+    const repository = fakeRepository();
+    repository.getDateRange = vi.fn().mockResolvedValue(null);
+    const app = createApp({
+      parseTriggerToken: 'secret',
+      importTimetable: vi.fn(),
+      repository
+    });
+
+    const response = await request(app).get('/api/timetable/date-range').expect(200);
+
+    expect(response.body).toEqual({ minDate: null, maxDate: null });
+  });
+
   it('returns timetable slots and import metadata', async () => {
     const repository = fakeRepository();
     const app = createApp({
@@ -65,6 +93,7 @@ function fakeRepository() {
       finishedAt: '2026-05-06T10:00:00.000Z',
       slotCount: 1,
       errorMessage: null
-    })
+    }),
+    getDateRange: vi.fn().mockResolvedValue({ minDate: '2026-05-01', maxDate: '2026-05-31' })
   };
 }
