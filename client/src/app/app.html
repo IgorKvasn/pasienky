@@ -6,7 +6,7 @@
       <p class="last-updated">
         Aktualizované:
         @if (response().lastImport?.finishedAt) {
-          <span>{{ response().lastImport?.finishedAt | date: 'd. M. y HH:mm' }}</span>
+          <span>{{ response().lastImport?.finishedAt | date: 'dd.MM.yyyy HH:mm' }}</span>
         } @else {
           <span>nie je dostupná</span>
         }
@@ -18,14 +18,14 @@
         <button type="button" class="today-button" (click)="goToCurrentWeek()">Dnes</button>
       }
       <button type="button" (click)="previousWeek()" [disabled]="!canGoBack()" aria-label="Predchádzajúci týždeň">&#8249;</button>
-      <strong>{{ weekRange().from }} – {{ weekRange().to }}</strong>
+      <strong>{{ weekRange().from | date: 'dd.MM.yyyy' }} – {{ weekRange().to | date: 'dd.MM.yyyy' }}</strong>
       <button type="button" (click)="nextWeek()" [disabled]="!canGoForward()" aria-label="Nasledujúci týždeň">&#8250;</button>
     </div>
   </header>
 
-  @if (isLoading()) {
+  @if (isLoading() && !hasLoadedTimetable()) {
     <p class="state">Načítavam rozpis…</p>
-  } @else if (errorMessage()) {
+  } @else if (errorMessage() && !hasLoadedTimetable()) {
     <p class="state error">{{ errorMessage() }}</p>
   } @else {
     <section class="timeline desktop-timeline" aria-label="Týždenný rozpis">
@@ -38,11 +38,11 @@
         </div>
       </div>
 
-      @for (day of timelineDays(); track day.date) {
+      @for (day of timelineDays(); track $index) {
         <div class="timeline-row">
-          <div class="timeline-day-label">{{ day.date | date: 'EEE d.M.' }}</div>
+          <div class="timeline-day-label">{{ day.date | date: 'EEE dd.MM.' }}</div>
           <div class="timeline-bar">
-            @for (segment of day.segments; track segment.startTime) {
+            @for (segment of day.segments; track segment.startTime + '-' + segment.endTime) {
               <div
                 class="timeline-segment"
                 [style.left.%]="segment.leftPercent"
@@ -74,36 +74,35 @@
 
     <section class="mobile-timeline" aria-label="Denný rozpis">
       <div class="day-tabs">
-        @for (day of timelineDays(); track day.date; let i = $index) {
+        @for (day of timelineDays(); track $index; let i = $index) {
           <button
             type="button"
             class="day-tab"
             [class.active]="i === selectedDayIndex()"
             (click)="selectDay(i)"
-          >{{ day.date | date: 'EEE' }}<span class="day-tab-date">{{ day.date | date: 'd.M.' }}</span></button>
+          >{{ day.date | date: 'EEE' }}<span class="day-tab-date">{{ day.date | date: 'dd.MM.yyyy' }}</span></button>
         }
       </div>
 
       @if (selectedDay(); as day) {
-        @if (day.segments.length === 0) {
-          <p class="no-slots">Žiadne voľné dráhy</p>
-        } @else {
-          <div class="day-slots">
-            @for (segment of day.segments; track segment.startTime) {
-              <div class="day-slot-row">
-                <span class="slot-time">{{ segment.startTime }} – {{ segment.endTime }}</span>
-                <div class="slot-bar" [style.background]="segmentColor(segment.lanes)">
-                  @if (segment.lanes > 0) {
-                    <span class="slot-lanes">{{ segment.lanes }}</span>
-                  }
-                </div>
-                @if (segment.note) {
-                  <span class="slot-note">{{ segment.note }}</span>
+        <div class="day-slots">
+          @if (day.segments.length === 0) {
+            <p class="no-slots">Žiadne voľné dráhy</p>
+          }
+          @for (segment of day.segments; track segment.startTime + '-' + segment.endTime) {
+            <div class="day-slot-row">
+              <span class="slot-time">{{ segment.startTime }} – {{ segment.endTime }}</span>
+              <div class="slot-bar" [style.background]="segmentColor(segment.lanes)">
+                @if (segment.lanes > 0) {
+                  <span class="slot-lanes">{{ segment.lanes }}</span>
                 }
               </div>
-            }
-          </div>
-        }
+              @if (segment.note) {
+                <span class="slot-note">{{ segment.note }}</span>
+              }
+            </div>
+          }
+        </div>
       }
     </section>
 

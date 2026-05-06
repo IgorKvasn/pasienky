@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
-import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { App } from './app';
+import { appConfig } from './app.config';
+import { ImportRunSummary } from './timetable.types';
 
 describe('App', () => {
   let httpTesting: HttpTestingController;
@@ -9,7 +10,10 @@ describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideHttpClient(), provideHttpClientTesting()]
+      providers: [
+        ...(appConfig.providers ?? []),
+        provideHttpClientTesting()
+      ]
     }).compileComponents();
     httpTesting = TestBed.inject(HttpTestingController);
   });
@@ -18,9 +22,9 @@ describe('App', () => {
     httpTesting.verify();
   });
 
-  function flushTimetable(slots: any[] = []) {
+  function flushTimetable(slots: any[] = [], lastImport: ImportRunSummary | null = null) {
     const req = httpTesting.expectOne(r => r.url === '/api/timetable');
-    req.flush({ slots, lastImport: null });
+    req.flush({ slots, lastImport });
   }
 
   function flushDateRange(minDate: string | null = null, maxDate: string | null = null) {
@@ -45,6 +49,40 @@ describe('App', () => {
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('h1')?.textContent).toContain('Voľné plavecké dráhy');
+  });
+
+  it('renders visible dates with Slovak weekday names and DD.MM.YYYY dates', async () => {
+    const fixture = TestBed.createComponent(App);
+    fixture.componentInstance['selectedDate'].set(new Date(Date.UTC(2026, 4, 13)));
+    flushTimetable([], {
+      id: 'import-1',
+      status: 'succeeded',
+      sourcePageUrl: 'https://example.test',
+      finishedAt: '2026-05-06T09:08:00Z',
+      workbookUrl: null,
+      startedAt: '2026-05-06T09:00:00Z',
+      slotCount: 0,
+      errorMessage: null
+    });
+    flushDateRange();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const compiled = fixture.nativeElement as HTMLElement;
+    const weekControls = compiled.querySelector('.week-controls')?.textContent ?? '';
+    const desktopDayLabel = compiled.querySelector('.desktop-timeline .timeline-row .timeline-day-label')?.textContent ?? '';
+    const mobileDayTab = compiled.querySelector('.day-tab')?.textContent ?? '';
+    const lastUpdated = compiled.querySelector('.last-updated')?.textContent ?? '';
+
+    expect(weekControls).toContain('11.05.2026');
+    expect(weekControls).toContain('17.05.2026');
+    expect(desktopDayLabel).toContain('po 11.05.');
+    expect(desktopDayLabel).not.toContain('2026');
+    expect(desktopDayLabel).not.toContain('Mon');
+    expect(mobileDayTab).toContain('po');
+    expect(mobileDayTab).not.toContain('Mon');
+    expect(mobileDayTab).toContain('11.05.2026');
+    expect(lastUpdated).toContain('06.05.2026');
   });
 
   describe('current week button', () => {
@@ -167,9 +205,58 @@ describe('App', () => {
       const rows = fixture.nativeElement.querySelectorAll('.day-slot-row');
       expect(rows.length).toBe(2);
     });
+
+    it('keeps the mobile selected-day timetable element when navigating from empty to available slots', async () => {
+      const fixture = TestBed.createComponent(App);
+      flushAll([], '2000-01-01', '2099-12-31');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      fixture.componentInstance['selectDay'](0);
+      fixture.detectChanges();
+      const initialDaySlots = fixture.nativeElement.querySelector('.day-slots');
+
+      fixture.componentInstance['nextWeek']();
+      const nextWeekDate = fixture.componentInstance['timelineDays']()[0].date;
+      flushTimetable([
+        { id: '1', date: nextWeekDate, startTime: '06:00', endTime: '08:00', availableLanes: 4, note: null }
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const updatedDaySlots = fixture.nativeElement.querySelector('.day-slots');
+      expect(updatedDaySlots).toBe(initialDaySlots);
+      expect(fixture.nativeElement.querySelectorAll('.day-slot-row').length).toBe(1);
+      expect(fixture.nativeElement.querySelector('.no-slots')).toBeNull();
+    });
   });
 
   describe('date range navigation', () => {
+    it('keeps desktop timeline row elements when navigating weeks', async () => {
+      const fixture = TestBed.createComponent(App);
+      flushAll([], '2000-01-01', '2099-12-31');
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const initialRows = Array.from(
+        fixture.nativeElement.querySelectorAll('.desktop-timeline .timeline-row')
+      );
+      fixture.componentInstance['nextWeek']();
+      const nextWeekDate = fixture.componentInstance['timelineDays']()[0].date;
+      flushTimetable([
+        { id: '1', date: nextWeekDate, startTime: '06:00', endTime: '08:00', availableLanes: 4, note: null }
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const updatedRows = Array.from(
+        fixture.nativeElement.querySelectorAll('.desktop-timeline .timeline-row')
+      );
+      expect(updatedRows.length).toBe(7);
+      expect(updatedRows[0]).toBe(initialRows[0]);
+      expect(fixture.nativeElement.querySelectorAll('.timeline-segment').length).toBe(1);
+    });
+
     it('disables previous button when at min date boundary', async () => {
       const fixture = TestBed.createComponent(App);
       const weekRange = fixture.componentInstance['weekRange']();

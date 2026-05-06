@@ -41,6 +41,7 @@ export class App {
 
   protected readonly selectedDate = signal(new Date());
   protected readonly isLoading = signal(true);
+  protected readonly hasLoadedTimetable = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly response = signal<TimetableResponse>({ slots: [], lastImport: null });
   protected readonly dateRange = signal<DateRange>({ minDate: null, maxDate: null });
@@ -132,6 +133,7 @@ export class App {
       )
       .subscribe((response) => {
         this.response.set(response);
+        this.hasLoadedTimetable.set(true);
         this.isLoading.set(false);
       });
   }
