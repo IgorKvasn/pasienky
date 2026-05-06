@@ -23,7 +23,7 @@ describe('HTTP API', () => {
 
     const response = await request(app).post('/api/admin/parse').set('X-Parse-Token', 'secret').expect(200);
 
-    expect(response.body.slotCount).toBe(2);
+    expect(response.body.status).toBe('accepted');
     expect(importTimetable).toHaveBeenCalledOnce();
   });
 

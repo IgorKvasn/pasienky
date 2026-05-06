@@ -11,22 +11,14 @@ export function createApp(dependencies: AppDependencies) {
   const app = express();
   app.use(express.json());
 
-  app.post('/api/admin/parse', async (request, response, next) => {
-    try {
-      if (request.header('X-Parse-Token') !== dependencies.parseTriggerToken) {
-        response.status(401).json({ error: 'Unauthorized' });
-        return;
-      }
-
-      const result = await dependencies.importTimetable();
-      response.json({
-        importRunId: result.id,
-        slotCount: result.slotCount,
-        importedAt: result.finishedAt
-      });
-    } catch (error) {
-      next(error);
+  app.post('/api/admin/parse', (request, response) => {
+    if (request.header('X-Parse-Token') !== dependencies.parseTriggerToken) {
+      response.status(401).json({ error: 'Unauthorized' });
+      return;
     }
+
+    dependencies.importTimetable().catch(() => {});
+    response.json({ status: 'accepted' });
   });
 
   app.get('/api/timetable', async (request, response, next) => {
