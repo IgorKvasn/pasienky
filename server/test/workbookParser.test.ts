@@ -3,14 +3,14 @@ import * as XLSX from 'xlsx';
 import { parseWorkbook } from '../src/source/workbookParser.js';
 
 function buildWorkbook(laneValues: (number | null)[]): Buffer {
-  const headerRow: (string | number | null)[] = ['Dátum', 'Služba', null];
+  const headerRow: (string | number | null)[] = ['Dátum', 'Služba', null, null];
   for (let hour = 5; hour <= 24; hour++) {
     headerRow.push(hour, '00', null, null);
   }
 
-  const dateRow: (Date | null)[] = [new Date('2026-05-11T00:00:00Z'), null, null];
-  const emptyRow: null[] = [null, null, null];
-  const lanesRow: (string | number | null)[] = ['Počet voľných dráh', null, null, ...laneValues];
+  const dateRow: (Date | null)[] = [new Date('2026-05-11T00:00:00'), null, null, null];
+  const emptyRow: null[] = [null, null, null, null];
+  const lanesRow: (string | number | null)[] = ['Počet voľných dráh', null, null, null, ...laneValues];
 
   const sheet = XLSX.utils.aoa_to_sheet([headerRow, dateRow, emptyRow, lanesRow]);
   const workbook = XLSX.utils.book_new();

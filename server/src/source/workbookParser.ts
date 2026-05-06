@@ -4,7 +4,7 @@ import type { TimetableSlotInput } from '../database/timetableRepository.js';
 type CellValue = string | number | boolean | Date | null | undefined;
 
 const LANE_COUNT_LABEL = 'Počet voľných dráh';
-const FIRST_HOUR_COLUMN = 3;
+const FIRST_HOUR_COLUMN = 4;
 const COLUMNS_PER_HOUR = 4;
 const MINUTES_PER_SLOT = 15;
 const START_HOUR = 5;
@@ -116,7 +116,9 @@ function mergeIntervals(
 
 function extractDate(value: CellValue): string | null {
   if (value instanceof Date) {
-    return value.toISOString().slice(0, 10);
+    // xlsx cellDates produces local-timezone Date objects; use local components
+    // to avoid UTC conversion shifting the date by one day
+    return `${value.getFullYear()}-${padTwo(String(value.getMonth() + 1))}-${padTwo(String(value.getDate()))}`;
   }
   if (typeof value !== 'string') return null;
   const trimmed = value.trim();
