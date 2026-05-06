@@ -4,9 +4,9 @@
       <p class="eyebrow">Pasienky 50 m</p>
       <h1>Voľné plavecké dráhy</h1>
       <p class="last-updated">
-        Posledná aktualizácia:
+        Aktualizované:
         @if (response().lastImport?.finishedAt) {
-          <span>{{ response().lastImport?.finishedAt | date: 'medium' }}</span>
+          <span>{{ response().lastImport?.finishedAt | date: 'd. M. y HH:mm' }}</span>
         } @else {
           <span>nie je dostupná</span>
         }
@@ -15,45 +15,101 @@
 
     <div class="week-controls">
       <button type="button" (click)="previousWeek()" aria-label="Predchádzajúci týždeň">&#8249;</button>
-      <strong>{{ weekRange().from }} - {{ weekRange().to }}</strong>
+      <strong>{{ weekRange().from }} – {{ weekRange().to }}</strong>
       <button type="button" (click)="nextWeek()" aria-label="Nasledujúci týždeň">&#8250;</button>
+      @if (!isCurrentWeek()) {
+        <button type="button" class="today-button" (click)="goToCurrentWeek()">Dnes</button>
+      }
     </div>
   </header>
 
-  <section class="filters" aria-label="Filtre">
-    <label>
-      Minimum dráh
-      <input type="range" min="1" max="8" [value]="minimumLanes()" (input)="setMinimumLanes($event)" />
-      <span>{{ minimumLanes() }}</span>
-    </label>
-  </section>
-
   @if (isLoading()) {
-    <p class="state">Načítavam rozpis...</p>
+    <p class="state">Načítavam rozpis…</p>
   } @else if (errorMessage()) {
     <p class="state error">{{ errorMessage() }}</p>
-  } @else if (!days().length) {
-    <p class="state">Pre vybraný týždeň nie sú dostupné žiadne dráhy podľa filtra.</p>
   } @else {
-    <section class="week-grid" aria-label="Týždenný rozpis">
-      @for (day of days(); track day.date) {
-        <article class="day-column">
-          <h2>{{ day.date | date: 'EEEE d. M.' }}</h2>
-          <div class="slots">
-            @for (slot of day.slots; track slot.id) {
-              <div class="slot" [ngClass]="laneClass(slot.availableLanes)">
-                <div>
-                  <strong>{{ slot.startTime }} - {{ slot.endTime }}</strong>
-                  @if (slot.note) {
-                    <p>{{ slot.note }}</p>
-                  }
+    <section class="timeline desktop-timeline" aria-label="Týždenný rozpis">
+      <div class="timeline-hours-header">
+        <div class="timeline-day-label"></div>
+        <div class="timeline-hours-row">
+          @for (hour of hours; track hour) {
+            <span class="hour-label" [style.left.%]="hourTickLeft(hour)">{{ hour }}</span>
+          }
+        </div>
+      </div>
+
+      @for (day of timelineDays(); track day.date) {
+        <div class="timeline-row">
+          <div class="timeline-day-label">{{ day.date | date: 'EEE d.M.' }}</div>
+          <div class="timeline-bar">
+            @for (segment of day.segments; track segment.startTime) {
+              <div
+                class="timeline-segment"
+                [style.left.%]="segment.leftPercent"
+                [style.width.%]="segment.widthPercent"
+                [style.background]="segmentColor(segment.lanes)"
+                [title]="segmentTooltip(segment)"
+              >
+                @if (segment.widthPercent > 4) {
+                  <span class="segment-label">{{ segment.lanes }}</span>
+                }
+              </div>
+            }
+            @for (hour of hours; track hour) {
+              <div class="tick" [style.left.%]="hourTickLeft(hour)"></div>
+            }
+          </div>
+        </div>
+      }
+    </section>
+
+    <section class="mobile-timeline" aria-label="Denný rozpis">
+      <div class="day-tabs">
+        @for (day of timelineDays(); track day.date; let i = $index) {
+          <button
+            type="button"
+            class="day-tab"
+            [class.active]="i === selectedDayIndex()"
+            (click)="selectDay(i)"
+          >{{ day.date | date: 'EEE' }}<span class="day-tab-date">{{ day.date | date: 'd.M.' }}</span></button>
+        }
+      </div>
+
+      @if (selectedDay(); as day) {
+        @if (day.segments.length === 0) {
+          <p class="no-slots">Žiadne voľné dráhy</p>
+        } @else {
+          <div class="day-slots">
+            @for (segment of day.segments; track segment.startTime) {
+              <div class="day-slot-row">
+                <span class="slot-time">{{ segment.startTime }} – {{ segment.endTime }}</span>
+                <div class="slot-bar" [style.background]="segmentColor(segment.lanes)">
+                  <span class="slot-lanes">{{ segment.lanes }}</span>
                 </div>
-                <span>{{ slot.availableLanes }} dráh</span>
+                @if (segment.note) {
+                  <span class="slot-note">{{ segment.note }}</span>
+                }
               </div>
             }
           </div>
-        </article>
+        }
       }
     </section>
+
+    <div class="legend">
+      @for (n of legendEntries; track n) {
+        <div class="legend-item">
+          <div class="legend-swatch" [style.background]="segmentColor(n)"></div>
+          <span>{{ n }}</span>
+        </div>
+      }
+      <span class="legend-suffix">dráh</span>
+    </div>
+
+    @if (response().lastImport?.workbookUrl) {
+      <p class="source-link">
+        Zdroj: <a [href]="response().lastImport!.workbookUrl!" target="_blank" rel="noopener">Rozpis dráh – Bratislava.sk (XLS)</a>
+      </p>
+    }
   }
 </main>

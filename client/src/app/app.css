@@ -1,136 +1,325 @@
 :host {
   display: block;
-  color: #172033;
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  color: #e0e0e0;
 }
 
 .page-shell {
-  max-width: 1180px;
+  max-width: 1100px;
   margin: 0 auto;
   padding: 32px 20px;
 }
+
+/* ── Toolbar ── */
 
 .toolbar {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
-  border-bottom: 1px solid #d9dee8;
+  border-bottom: 1px solid #2a2d35;
   padding-bottom: 20px;
 }
 
 .eyebrow {
-  margin: 0 0 6px;
-  color: #40627d;
+  margin: 0 0 4px;
+  color: #6a9fff;
   font-size: 0.78rem;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 h1 {
   margin: 0;
-  font-size: 2rem;
+  font-size: 1.8rem;
+  color: #fff;
 }
 
 .last-updated {
-  margin: 8px 0 0;
-  color: #5a6678;
+  margin: 6px 0 0;
+  font-size: 0.82rem;
+  color: #666;
 }
 
 .week-controls {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-shrink: 0;
+}
+
+.week-controls strong {
+  min-width: 180px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: #aaa;
 }
 
 button {
   width: 40px;
   height: 40px;
-  border: 1px solid #b9c3d2;
-  background: #ffffff;
+  border: 1px solid #3a3d45;
+  background: #2a2d35;
   border-radius: 6px;
   cursor: pointer;
   font-size: 1.5rem;
+  color: #ccc;
+  transition: background 0.15s;
 }
 
-.filters {
+button:hover {
+  background: #35383f;
+}
+
+.today-button {
+  width: auto;
+  padding: 0 14px;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+}
+
+/* ── Timeline ── */
+
+.timeline {
+  margin-top: 24px;
+}
+
+.timeline-hours-header {
   display: flex;
-  justify-content: flex-end;
-  padding: 18px 0;
+  align-items: flex-end;
+  margin-bottom: 4px;
 }
 
-.filters label {
+.timeline-hours-row {
+  flex: 1;
+  position: relative;
+  height: 20px;
+}
+
+.hour-label {
+  position: absolute;
+  transform: translateX(-50%);
+  font-size: 0.65rem;
+  color: #555;
+}
+
+.timeline-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-weight: 600;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(7, minmax(0, 1fr));
-  gap: 12px;
+.timeline-day-label {
+  width: 80px;
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  color: #aaa;
+  text-align: right;
 }
 
-.day-column {
-  min-width: 0;
+.timeline-bar {
+  flex: 1;
+  height: 38px;
+  background: #1a1c22;
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
 }
 
-.day-column h2 {
-  min-height: 40px;
-  margin: 0 0 10px;
-  font-size: 0.95rem;
+.timeline-segment {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s;
+  cursor: default;
 }
 
-.slots {
-  display: grid;
-  gap: 10px;
+.timeline-segment:hover {
+  opacity: 0.8;
 }
 
-.slot {
-  display: grid;
-  gap: 10px;
-  min-height: 88px;
-  border: 1px solid #d8e0ea;
-  border-left-width: 5px;
-  border-radius: 8px;
-  padding: 10px;
-  background: #ffffff;
-}
-
-.slot span {
+.segment-label {
+  font-size: 0.7rem;
   font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
 }
 
-.slot p {
-  margin: 4px 0 0;
-  color: #5a6678;
-  font-size: 0.88rem;
+.tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.06);
+  pointer-events: none;
 }
 
-.slot.high {
-  border-left-color: #21845a;
+/* ── Legend ── */
+
+.legend {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 16px;
+  flex-wrap: wrap;
 }
 
-.slot.medium {
-  border-left-color: #c58a1d;
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.7rem;
+  color: #888;
 }
 
-.slot.low {
-  border-left-color: #b94343;
+.legend-swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
 }
+
+.legend-suffix {
+  font-size: 0.7rem;
+  color: #555;
+  margin-left: 4px;
+}
+
+/* ── Source link ── */
+
+.source-link {
+  margin-top: 12px;
+  font-size: 0.75rem;
+  color: #555;
+}
+
+.source-link a {
+  color: #6a9fff;
+  text-decoration: underline;
+}
+
+.source-link a:hover {
+  color: #8cb4ff;
+}
+
+/* ── States ── */
 
 .state {
-  border: 1px solid #d8e0ea;
+  border: 1px solid #2a2d35;
   border-radius: 8px;
   padding: 18px;
-  background: #f7f9fc;
+  margin-top: 24px;
+  background: #181a20;
+  color: #aaa;
 }
 
 .state.error {
-  border-color: #d48b8b;
-  background: #fff6f6;
+  border-color: #5a2020;
+  background: #1f1418;
+  color: #e88;
 }
+
+/* ── Mobile day view (hidden on desktop) ── */
+
+.mobile-timeline {
+  display: none;
+}
+
+.day-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  overflow-x: auto;
+}
+
+.day-tab {
+  width: auto;
+  height: auto;
+  flex: 1;
+  min-width: 0;
+  padding: 8px 4px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  color: #888;
+  border: 1px solid #2a2d35;
+  background: #181a20;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.day-tab.active {
+  background: #2a2d35;
+  color: #fff;
+  border-color: #6a9fff;
+}
+
+.day-tab-date {
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: #666;
+}
+
+.day-tab.active .day-tab-date {
+  color: #aaa;
+}
+
+.no-slots {
+  text-align: center;
+  color: #555;
+  font-size: 0.85rem;
+  padding: 24px 0;
+}
+
+.day-slots {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.day-slot-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.slot-time {
+  width: 110px;
+  flex-shrink: 0;
+  font-size: 0.82rem;
+  color: #aaa;
+  font-variant-numeric: tabular-nums;
+}
+
+.slot-bar {
+  flex: 1;
+  height: 36px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.slot-lanes {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+.slot-note {
+  font-size: 0.72rem;
+  color: #666;
+  flex-shrink: 0;
+}
+
+/* ── Responsive ── */
 
 @media (max-width: 760px) {
   .toolbar {
@@ -138,12 +327,16 @@ button {
     flex-direction: column;
   }
 
-  .week-controls,
-  .filters {
+  .week-controls {
     justify-content: space-between;
   }
 
-  .week-grid {
-    grid-template-columns: 1fr;
+  .desktop-timeline {
+    display: none;
+  }
+
+  .mobile-timeline {
+    display: block;
+    margin-top: 24px;
   }
 }
