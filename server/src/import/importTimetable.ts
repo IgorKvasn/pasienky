@@ -1,5 +1,6 @@
 import type { ImportRunSummary, TimetableRepository } from '../database/timetableRepository.js';
 import { fetchBratislavaPage, findWorkbookUrl } from '../source/bratislavaPage.js';
+import { downloadSharePointWorkbook } from '../source/sharepointDownload.js';
 import { parseWorkbook } from '../source/workbookParser.js';
 
 export interface ImportTimetableDependencies {
@@ -14,7 +15,7 @@ export interface ImportTimetableDependencies {
 export async function importTimetable(dependencies: ImportTimetableDependencies): Promise<ImportRunSummary> {
   const fetchPage = dependencies.fetchPage ?? fetchBratislavaPage;
   const discoverWorkbookUrl = dependencies.findWorkbookUrl ?? findWorkbookUrl;
-  const downloadWorkbook = dependencies.fetchWorkbook ?? fetchWorkbook;
+  const downloadWorkbook = dependencies.fetchWorkbook ?? downloadSharePointWorkbook;
   const parse = dependencies.parseWorkbook ?? parseWorkbook;
 
   const html = await fetchPage(dependencies.pageUrl);
@@ -23,12 +24,4 @@ export async function importTimetable(dependencies: ImportTimetableDependencies)
   const slots = parse(workbookBuffer);
 
   return dependencies.repository.replaceTimetable(dependencies.pageUrl, workbookUrl, slots);
-}
-
-export async function fetchWorkbook(url: string): Promise<Buffer> {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`Failed to fetch workbook: ${response.status}`);
-  }
-  return Buffer.from(await response.arrayBuffer());
 }
