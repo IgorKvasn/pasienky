@@ -243,9 +243,10 @@ button:disabled {
 
 .day-tabs {
   display: flex;
-  gap: 4px;
+  gap: 3px;
   margin-bottom: 16px;
   overflow-x: auto;
+  scrollbar-width: none;
 }
 
 .day-tab {
@@ -253,8 +254,8 @@ button:disabled {
   height: auto;
   flex: 1;
   min-width: 0;
-  padding: 8px 4px;
-  font-size: 0.78rem;
+  padding: 6px 2px;
+  font-size: 0.75rem;
   font-weight: 600;
   text-align: center;
   color: #888;

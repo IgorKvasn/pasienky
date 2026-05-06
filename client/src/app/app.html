@@ -85,7 +85,7 @@
             [class.disabled]="!hasDayData(day)"
             [disabled]="!hasDayData(day)"
             (click)="selectDay(i)"
-          >{{ day.date | date: 'EEE' }}<span class="day-tab-date">{{ day.date | date: 'dd.MM.yyyy' }}</span></button>
+          >{{ day.date | date: 'EEE' }}<span class="day-tab-date">{{ day.date | date: 'dd.MM.' }}</span></button>
         }
       </div>
 

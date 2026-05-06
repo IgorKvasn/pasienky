@@ -131,7 +131,7 @@ export class App {
       return;
     }
 
-    this.shiftMobileDay(deltaX > 0 ? 1 : -1);
+    this.shiftMobileDay(deltaX > 0 ? -1 : 1);
   }
 
   protected hasDayData(day: TimelineDay | undefined): boolean {
