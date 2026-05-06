@@ -91,10 +91,12 @@ export class App {
   }
 
   protected previousWeek(): void {
+    this.pendingMobileRolloverDirection = 1;
     this.shiftWeek(-7);
   }
 
   protected nextWeek(): void {
+    this.pendingMobileRolloverDirection = 1;
     this.shiftWeek(7);
   }
 
