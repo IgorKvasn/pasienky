@@ -1,0 +1,3 @@
+create a new nodejs and angular project that show swimming pool timetable - list of available swimming lines for certain times. To fetch data use this website:
+  https://old.starz.sk/mestska-plavaren-pasienky/os-1002 specifically link with name "VEREJNOSŤ". then parse underlying excel to show data on the angular website
+
