@@ -1,7 +1,15 @@
-import { chromium } from 'playwright';
+import chromium from '@sparticuz/chromium';
+import { chromium as playwrightChromium } from 'playwright-core';
 
 export async function downloadSharePointWorkbook(shareUrl: string): Promise<Buffer> {
-  const browser = await chromium.launch({ headless: true });
+  chromium.setGraphicsMode = false;
+
+  const browser = await playwrightChromium.launch({
+    args: chromium.args,
+    executablePath: await chromium.executablePath(),
+    headless: true
+  });
+
   try {
     const page = await browser.newPage();
     await page.goto(shareUrl, { waitUntil: 'networkidle', timeout: 60000 });
