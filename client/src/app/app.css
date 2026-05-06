@@ -238,6 +238,7 @@ button:disabled {
 
 .mobile-timeline {
   display: none;
+  touch-action: pan-y;
 }
 
 .day-tabs {
@@ -272,6 +273,15 @@ button:disabled {
   border-color: #6a9fff;
 }
 
+.day-tab:disabled,
+.day-tab.disabled {
+  opacity: 0.35;
+  cursor: default;
+  color: #555;
+  border-color: #24262d;
+  background: #14161b;
+}
+
 .day-tab-date {
   font-size: 0.68rem;
   font-weight: 400;
@@ -280,6 +290,11 @@ button:disabled {
 
 .day-tab.active .day-tab-date {
   color: #aaa;
+}
+
+.day-tab:disabled .day-tab-date,
+.day-tab.disabled .day-tab-date {
+  color: #444;
 }
 
 .no-slots {

@@ -8,8 +8,10 @@ import {
   getWeekDates,
   getAdjacentWeekRange,
   buildTimelineDays,
+  buildMobileTimelineDays,
   isCurrentWeek,
   TIMELINE_HOURS,
+  TimelineDay,
   TimelineSegment
 } from './week-utils';
 
@@ -30,6 +32,8 @@ const LANE_COLORS: Record<number, string> = {
   8: '#2255aa'
 };
 
+const MOBILE_SWIPE_THRESHOLD_PX = 48;
+
 @Component({
   selector: 'app-root',
   imports: [DatePipe],
@@ -38,6 +42,8 @@ const LANE_COLORS: Record<number, string> = {
 })
 export class App {
   private readonly timetableService = inject(TimetableService);
+  private mobileTouchStart: { x: number; y: number } | null = null;
+  private pendingMobileRolloverDirection: -1 | 1 | null = null;
 
   protected readonly selectedDate = signal(new Date());
   protected readonly isLoading = signal(true);
@@ -70,7 +76,12 @@ export class App {
     return buildTimelineDays(this.response().slots, weekDates);
   });
 
-  protected readonly selectedDay = computed(() => this.timelineDays()[this.selectedDayIndex()]);
+  protected readonly mobileTimelineDays = computed(() => {
+    const weekDates = getWeekDates(this.selectedDate());
+    return buildMobileTimelineDays(this.response().slots, weekDates);
+  });
+
+  protected readonly selectedDay = computed(() => this.mobileTimelineDays()[this.selectedDayIndex()]);
 
   constructor() {
     this.loadWeek();
@@ -94,7 +105,37 @@ export class App {
   }
 
   protected selectDay(index: number): void {
+    if (!this.hasDayData(this.mobileTimelineDays()[index])) {
+      return;
+    }
+
     this.selectedDayIndex.set(index);
+  }
+
+  protected onMobileTouchStart(event: TouchEvent): void {
+    const touch = event.changedTouches[0];
+    this.mobileTouchStart = { x: touch.clientX, y: touch.clientY };
+  }
+
+  protected onMobileTouchEnd(event: TouchEvent): void {
+    if (this.mobileTouchStart === null) {
+      return;
+    }
+
+    const touch = event.changedTouches[0];
+    const deltaX = touch.clientX - this.mobileTouchStart.x;
+    const deltaY = touch.clientY - this.mobileTouchStart.y;
+    this.mobileTouchStart = null;
+
+    if (Math.abs(deltaX) < MOBILE_SWIPE_THRESHOLD_PX || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      return;
+    }
+
+    this.shiftMobileDay(deltaX > 0 ? 1 : -1);
+  }
+
+  protected hasDayData(day: TimelineDay | undefined): boolean {
+    return (day?.segments.length ?? 0) > 0;
   }
 
   protected segmentColor(lanes: number): string {
@@ -110,12 +151,80 @@ export class App {
     return ((hour - 5) / 19) * 100;
   }
 
-  private shiftWeek(days: number): void {
+  private shiftWeek(days: number, selectedDayIndex = 0): void {
     const next = new Date(this.selectedDate());
     next.setUTCDate(next.getUTCDate() + days);
     this.selectedDate.set(next);
-    this.selectedDayIndex.set(0);
+    this.selectedDayIndex.set(selectedDayIndex);
     this.loadWeek();
+  }
+
+  private shiftMobileDay(direction: -1 | 1): void {
+    const targetDayIndex = this.selectedDayIndex() + direction;
+
+    if (targetDayIndex >= 0 && targetDayIndex < 7) {
+      if (this.hasDayData(this.mobileTimelineDays()[targetDayIndex])) {
+        this.selectedDayIndex.set(targetDayIndex);
+        return;
+      }
+
+      if (this.hasEnabledDayAfter(targetDayIndex, direction)) {
+        return;
+      }
+
+      this.shiftMobileWeek(direction);
+      return;
+    }
+
+    this.shiftMobileWeek(direction);
+  }
+
+  private hasEnabledDayAfter(index: number, direction: -1 | 1): boolean {
+    const days = this.mobileTimelineDays();
+    for (let i = index + direction; i >= 0 && i < days.length; i += direction) {
+      if (this.hasDayData(days[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  private shiftMobileWeek(direction: -1 | 1): void {
+    if (direction === 1 && this.canGoForward()) {
+      this.pendingMobileRolloverDirection = direction;
+      this.shiftWeek(7, 0);
+    }
+
+    if (direction === -1 && this.canGoBack()) {
+      this.pendingMobileRolloverDirection = direction;
+      this.shiftWeek(-7, 6);
+    }
+  }
+
+  private selectRolloverDayIfNeeded(): void {
+    const direction = this.pendingMobileRolloverDirection;
+    if (direction === null) {
+      return;
+    }
+
+    this.pendingMobileRolloverDirection = null;
+    const selectableDayIndex = this.findSelectableDayIndex(direction);
+    if (selectableDayIndex !== null) {
+      this.selectedDayIndex.set(selectableDayIndex);
+    }
+  }
+
+  private findSelectableDayIndex(direction: -1 | 1): number | null {
+    const days = this.mobileTimelineDays();
+    const start = direction === 1 ? 0 : days.length - 1;
+
+    for (let i = start; i >= 0 && i < days.length; i += direction) {
+      if (this.hasDayData(days[i])) {
+        return i;
+      }
+    }
+
+    return null;
   }
 
   private loadWeek(): void {
@@ -133,6 +242,7 @@ export class App {
       )
       .subscribe((response) => {
         this.response.set(response);
+        this.selectRolloverDayIfNeeded();
         this.hasLoadedTimetable.set(true);
         this.isLoading.set(false);
       });

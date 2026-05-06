@@ -14,9 +14,7 @@
     </div>
 
     <div class="week-controls">
-      @if (!isCurrentWeek()) {
-        <button type="button" class="today-button" (click)="goToCurrentWeek()">Dnes</button>
-      }
+      <button type="button" class="today-button" [disabled]="isCurrentWeek()" (click)="goToCurrentWeek()">Tento týždeň</button>
       <button type="button" (click)="previousWeek()" [disabled]="!canGoBack()" aria-label="Predchádzajúci týždeň">&#8249;</button>
       <strong>{{ weekRange().from | date: 'dd.MM.yyyy' }} – {{ weekRange().to | date: 'dd.MM.yyyy' }}</strong>
       <button type="button" (click)="nextWeek()" [disabled]="!canGoForward()" aria-label="Nasledujúci týždeň">&#8250;</button>
@@ -72,13 +70,20 @@
       </div>
     </section>
 
-    <section class="mobile-timeline" aria-label="Denný rozpis">
+    <section
+      class="mobile-timeline"
+      aria-label="Denný rozpis"
+      (touchstart)="onMobileTouchStart($event)"
+      (touchend)="onMobileTouchEnd($event)"
+    >
       <div class="day-tabs">
-        @for (day of timelineDays(); track $index; let i = $index) {
+        @for (day of mobileTimelineDays(); track $index; let i = $index) {
           <button
             type="button"
             class="day-tab"
             [class.active]="i === selectedDayIndex()"
+            [class.disabled]="!hasDayData(day)"
+            [disabled]="!hasDayData(day)"
             (click)="selectDay(i)"
           >{{ day.date | date: 'EEE' }}<span class="day-tab-date">{{ day.date | date: 'dd.MM.yyyy' }}</span></button>
         }

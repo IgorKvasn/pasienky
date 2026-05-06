@@ -1,5 +1,12 @@
 import { vi } from 'vitest';
-import { getWeekRange, getWeekDates, getAdjacentWeekRange, buildTimelineDays, isCurrentWeek } from './week-utils';
+import {
+  getWeekRange,
+  getWeekDates,
+  getAdjacentWeekRange,
+  buildTimelineDays,
+  buildMobileTimelineDays,
+  isCurrentWeek
+} from './week-utils';
 
 describe('getWeekRange', () => {
   it('returns a Monday to Sunday range', () => {
@@ -92,5 +99,25 @@ describe('buildTimelineDays', () => {
     ];
     const days = buildTimelineDays(slots, ['2026-05-11']);
     expect(days[0].segments[0].note).toBe('Údržba');
+  });
+});
+
+describe('buildMobileTimelineDays', () => {
+  it('expands imported ranges into 30-minute rows', () => {
+    const slots = [
+      { id: '1', date: '2026-05-11', startTime: '06:00', endTime: '07:30', availableLanes: 4, note: null },
+      { id: '2', date: '2026-05-11', startTime: '10:00', endTime: '10:30', availableLanes: 2, note: 'Test' }
+    ];
+
+    const days = buildMobileTimelineDays(slots, ['2026-05-11']);
+
+    expect(days[0].segments.map(segment => `${segment.startTime}-${segment.endTime}`)).toEqual([
+      '06:00-06:30',
+      '06:30-07:00',
+      '07:00-07:30',
+      '10:00-10:30'
+    ]);
+    expect(days[0].segments.map(segment => segment.lanes)).toEqual([4, 4, 4, 2]);
+    expect(days[0].segments[3].note).toBe('Test');
   });
 });

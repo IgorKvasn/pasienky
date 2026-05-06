@@ -76,6 +76,15 @@ export function buildTimelineDays(slots: TimetableSlot[], weekDates: string[]): 
   });
 }
 
+export function buildMobileTimelineDays(slots: TimetableSlot[], weekDates: string[]): TimelineDay[] {
+  return buildTimelineDays(slots, weekDates).map(day => ({
+    date: day.date,
+    segments: day.segments
+      .filter(segment => segment.lanes > 0)
+      .flatMap(splitSegmentIntoThirtyMinuteRows)
+  }));
+}
+
 export function getAdjacentWeekRange(date: Date, direction: -1 | 1): { from: string; to: string } {
   const shifted = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
   shifted.setUTCDate(shifted.getUTCDate() + direction * 7);
@@ -94,6 +103,29 @@ export const TIMELINE_HOURS = Array.from({ length: 20 }, (_, i) => i + 5);
 function parseTime(time: string): number {
   const [hours, minutes] = time.split(':').map(Number);
   return hours * 60 + minutes;
+}
+
+function splitSegmentIntoThirtyMinuteRows(segment: TimelineSegment): TimelineSegment[] {
+  const startMinutes = parseTime(segment.startTime);
+  const endMinutes = parseTime(segment.endTime);
+  const rows: TimelineSegment[] = [];
+
+  for (let rowStart = startMinutes; rowStart < endMinutes; rowStart += 30) {
+    const rowEnd = Math.min(rowStart + 30, endMinutes);
+    rows.push({
+      ...segment,
+      startTime: formatTime(rowStart),
+      endTime: formatTime(rowEnd)
+    });
+  }
+
+  return rows;
+}
+
+function formatTime(minutes: number): string {
+  const hours = Math.floor(minutes / 60);
+  const remainingMinutes = minutes % 60;
+  return `${hours.toString().padStart(2, '0')}:${remainingMinutes.toString().padStart(2, '0')}`;
 }
 
 function formatDate(date: Date): string {
