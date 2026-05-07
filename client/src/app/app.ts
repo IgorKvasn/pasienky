@@ -52,7 +52,7 @@ export class App {
   protected readonly hasLoadedTimetable = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly importRunning = signal(false);
-  protected readonly response = signal<TimetableResponse>({ slots: [], lastImport: null });
+  protected readonly response = signal<TimetableResponse>({ slots: [], lastImport: null, importRunning: false });
   protected readonly dateRange = signal<DateRange>({ minDate: null, maxDate: null });
   protected readonly weekRange = computed(() => getWeekRange(this.selectedDate()));
   protected readonly isCurrentWeek = computed(() => isCurrentWeek(this.selectedDate()));
@@ -243,7 +243,7 @@ export class App {
       .pipe(
         catchError(() => {
           this.errorMessage.set('Rozpis sa nepodarilo načítať.');
-          return of({ slots: [], lastImport: null });
+          return of({ slots: [], lastImport: null, importRunning: false } satisfies TimetableResponse);
         })
       )
       .subscribe((response) => {
