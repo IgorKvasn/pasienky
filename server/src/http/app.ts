@@ -5,6 +5,7 @@ export interface AppDependencies {
   parseTriggerToken: string;
   importTimetable: () => Promise<{ id?: string; slotCount: number; finishedAt?: string | null }>;
   repository: Pick<TimetableRepository, 'findSlots' | 'getLastSuccessfulImport' | 'getDateRange'>;
+  waitUntil?: (promise: Promise<unknown>) => void;
 }
 
 export function createApp(dependencies: AppDependencies) {
@@ -17,7 +18,10 @@ export function createApp(dependencies: AppDependencies) {
       return;
     }
 
-    dependencies.importTimetable().catch(() => {});
+    const importPromise = dependencies.importTimetable().catch(() => {});
+    if (dependencies.waitUntil) {
+      dependencies.waitUntil(importPromise);
+    }
     response.json({ status: 'accepted' });
   });
 
