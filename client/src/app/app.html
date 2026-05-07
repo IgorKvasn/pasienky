@@ -10,6 +10,9 @@
         } @else {
           <span>nie je dostupná</span>
         }
+        @if (importRunning()) {
+          <span class="import-running">Aktualizujem…</span>
+        }
       </p>
     </div>
 

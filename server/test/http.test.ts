@@ -94,6 +94,7 @@ function fakeRepository() {
       slotCount: 1,
       errorMessage: null
     }),
-    getDateRange: vi.fn().mockResolvedValue({ minDate: '2026-05-01', maxDate: '2026-05-31' })
+    getDateRange: vi.fn().mockResolvedValue({ minDate: '2026-05-01', maxDate: '2026-05-31' }),
+    isImportRunning: vi.fn().mockResolvedValue(false)
   };
 }

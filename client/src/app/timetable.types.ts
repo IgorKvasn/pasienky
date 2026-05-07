@@ -21,6 +21,7 @@ export interface ImportRunSummary {
 export interface TimetableResponse {
   slots: TimetableSlot[];
   lastImport: ImportRunSummary | null;
+  importRunning?: boolean;
 }
 
 export interface DateRange {

@@ -4,7 +4,7 @@ import type { TimetableRepository } from '../database/timetableRepository.js';
 export interface AppDependencies {
   parseTriggerToken: string;
   importTimetable: () => Promise<{ id?: string; slotCount: number; finishedAt?: string | null }>;
-  repository: Pick<TimetableRepository, 'findSlots' | 'getLastSuccessfulImport' | 'getDateRange'>;
+  repository: Pick<TimetableRepository, 'findSlots' | 'getLastSuccessfulImport' | 'getDateRange' | 'isImportRunning'>;
   waitUntil?: (promise: Promise<unknown>) => void;
 }
 
@@ -35,12 +35,13 @@ export function createApp(dependencies: AppDependencies) {
         return;
       }
 
-      const [slots, lastImport] = await Promise.all([
+      const [slots, lastImport, importRunning] = await Promise.all([
         dependencies.repository.findSlots(from, to),
-        dependencies.repository.getLastSuccessfulImport()
+        dependencies.repository.getLastSuccessfulImport(),
+        dependencies.repository.isImportRunning()
       ]);
 
-      response.json({ slots, lastImport });
+      response.json({ slots, lastImport, importRunning });
     } catch (error) {
       next(error);
     }

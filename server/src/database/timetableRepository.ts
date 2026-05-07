@@ -184,6 +184,13 @@ export class TimetableRepository {
     };
   }
 
+  async isImportRunning(): Promise<boolean> {
+    const result = await this.pool.query<{ count: string }>(
+      `SELECT count(*) AS count FROM import_runs WHERE status = 'running'`
+    );
+    return Number(result.rows[0].count) > 0;
+  }
+
   async getLastSuccessfulImport(): Promise<ImportRunSummary | null> {
     const result = await this.pool.query<ImportRunSummaryRow>(
       `

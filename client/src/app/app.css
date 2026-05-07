@@ -42,6 +42,17 @@ h1 {
   color: #666;
 }
 
+.import-running {
+  margin-left: 8px;
+  color: #6a9fff;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
 .week-controls {
   display: flex;
   align-items: center;

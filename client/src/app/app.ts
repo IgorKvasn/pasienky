@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { catchError, of } from 'rxjs';
 import { TimetableService } from './timetable.service';
@@ -42,13 +42,16 @@ const MOBILE_SWIPE_THRESHOLD_PX = 48;
 })
 export class App {
   private readonly timetableService = inject(TimetableService);
+  private readonly destroyRef = inject(DestroyRef);
   private mobileTouchStart: { x: number; y: number } | null = null;
   private pendingMobileRolloverDirection: -1 | 1 | null = null;
+  private importPollingTimer: ReturnType<typeof setInterval> | null = null;
 
   protected readonly selectedDate = signal(new Date());
   protected readonly isLoading = signal(true);
   protected readonly hasLoadedTimetable = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
+  protected readonly importRunning = signal(false);
   protected readonly response = signal<TimetableResponse>({ slots: [], lastImport: null });
   protected readonly dateRange = signal<DateRange>({ minDate: null, maxDate: null });
   protected readonly weekRange = computed(() => getWeekRange(this.selectedDate()));
@@ -88,6 +91,7 @@ export class App {
     this.timetableService.getDateRange()
       .pipe(catchError(() => of({ minDate: null, maxDate: null })))
       .subscribe((dateRange) => this.dateRange.set(dateRange));
+    this.destroyRef.onDestroy(() => this.stopImportPolling());
   }
 
   protected previousWeek(): void {
@@ -247,6 +251,43 @@ export class App {
         this.selectRolloverDayIfNeeded();
         this.hasLoadedTimetable.set(true);
         this.isLoading.set(false);
+        this.handleImportRunning(response.importRunning ?? false);
+      });
+  }
+
+  private handleImportRunning(running: boolean): void {
+    this.importRunning.set(running);
+    if (running && this.importPollingTimer === null) {
+      this.startImportPolling();
+    } else if (!running) {
+      this.stopImportPolling();
+    }
+  }
+
+  private startImportPolling(): void {
+    this.importPollingTimer = setInterval(() => this.pollImportStatus(), 10_000);
+  }
+
+  private stopImportPolling(): void {
+    if (this.importPollingTimer !== null) {
+      clearInterval(this.importPollingTimer);
+      this.importPollingTimer = null;
+    }
+  }
+
+  private pollImportStatus(): void {
+    const range = this.weekRange();
+    this.timetableService
+      .getTimetable(range.from, range.to)
+      .pipe(catchError(() => of(null)))
+      .subscribe((response) => {
+        if (response === null) return;
+        const stillRunning = response.importRunning ?? false;
+        this.importRunning.set(stillRunning);
+        if (!stillRunning) {
+          this.stopImportPolling();
+          this.response.set(response);
+        }
       });
   }
 }
