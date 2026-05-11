@@ -142,6 +142,11 @@ button:disabled {
   text-align: right;
 }
 
+.timeline-row .timeline-day-label.morning-availability {
+  color: #48d18a;
+  font-weight: 700;
+}
+
 .timeline-bar {
   flex: 1;
   height: 38px;
@@ -277,6 +282,10 @@ button:disabled {
   flex-direction: column;
   align-items: center;
   gap: 2px;
+}
+
+.day-tab.morning-availability {
+  box-shadow: inset 0 3px 0 #48d18a;
 }
 
 .day-tab.active {

@@ -17,11 +17,15 @@ export interface TimelineSegment {
 export interface TimelineDay {
   date: string;
   segments: TimelineSegment[];
+  hasMorningAvailability: boolean;
 }
 
 const DAY_START_MINUTES = 5 * 60;
 const DAY_END_MINUTES = 24 * 60;
 const DAY_SPAN_MINUTES = DAY_END_MINUTES - DAY_START_MINUTES;
+const MORNING_AVAILABILITY_START_MINUTES = 7 * 60;
+const MORNING_AVAILABILITY_END_MINUTES = 8 * 60;
+const MORNING_AVAILABILITY_MINIMUM_LANES = 3;
 
 export function getWeekRange(date: Date): { from: string; to: string } {
   const start = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
@@ -72,13 +76,18 @@ export function buildTimelineDays(slots: TimetableSlot[], weekDates: string[]): 
       };
     });
 
-    return { date, segments };
+    return {
+      date,
+      segments,
+      hasMorningAvailability: hasMorningAvailability(daySlots)
+    };
   });
 }
 
 export function buildMobileTimelineDays(slots: TimetableSlot[], weekDates: string[]): TimelineDay[] {
   return buildTimelineDays(slots, weekDates).map(day => ({
     date: day.date,
+    hasMorningAvailability: day.hasMorningAvailability,
     segments: day.segments
       .filter(segment => segment.lanes > 0)
       .flatMap(splitSegmentIntoThirtyMinuteRows)
@@ -103,6 +112,33 @@ export const TIMELINE_HOURS = Array.from({ length: 20 }, (_, i) => i + 5);
 function parseTime(time: string): number {
   const [hours, minutes] = time.split(':').map(Number);
   return hours * 60 + minutes;
+}
+
+function hasMorningAvailability(slots: TimetableSlot[]): boolean {
+  let coveredUntilMinutes = MORNING_AVAILABILITY_START_MINUTES;
+
+  for (const slot of slots) {
+    if (slot.availableLanes < MORNING_AVAILABILITY_MINIMUM_LANES) {
+      continue;
+    }
+
+    const startMinutes = parseTime(slot.startTime);
+    const endMinutes = parseTime(slot.endTime);
+    if (endMinutes <= coveredUntilMinutes) {
+      continue;
+    }
+
+    if (startMinutes > coveredUntilMinutes) {
+      return false;
+    }
+
+    coveredUntilMinutes = Math.max(coveredUntilMinutes, endMinutes);
+    if (coveredUntilMinutes >= MORNING_AVAILABILITY_END_MINUTES) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function splitSegmentIntoThirtyMinuteRows(segment: TimelineSegment): TimelineSegment[] {

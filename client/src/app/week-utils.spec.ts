@@ -100,6 +100,27 @@ describe('buildTimelineDays', () => {
     const days = buildTimelineDays(slots, ['2026-05-11']);
     expect(days[0].segments[0].note).toBe('Údržba');
   });
+
+  it('marks days with at least 3 lanes throughout the full 07:00 to 08:00 interval', () => {
+    const slots = [
+      { id: '1', date: '2026-05-11', startTime: '06:00', endTime: '08:00', availableLanes: 3, note: null },
+      { id: '2', date: '2026-05-12', startTime: '07:00', endTime: '08:00', availableLanes: 2, note: null },
+      { id: '3', date: '2026-05-13', startTime: '08:00', endTime: '10:00', availableLanes: 4, note: null },
+      { id: '4', date: '2026-05-14', startTime: '07:00', endTime: '07:30', availableLanes: 3, note: null },
+      { id: '5', date: '2026-05-15', startTime: '07:00', endTime: '07:30', availableLanes: 3, note: null },
+      { id: '6', date: '2026-05-15', startTime: '07:30', endTime: '08:00', availableLanes: 3, note: null }
+    ];
+
+    const days = buildTimelineDays(slots, [
+      '2026-05-11',
+      '2026-05-12',
+      '2026-05-13',
+      '2026-05-14',
+      '2026-05-15'
+    ]);
+
+    expect(days.map(day => day.hasMorningAvailability)).toEqual([true, false, false, false, true]);
+  });
 });
 
 describe('buildMobileTimelineDays', () => {
@@ -119,5 +140,15 @@ describe('buildMobileTimelineDays', () => {
     ]);
     expect(days[0].segments.map(segment => segment.lanes)).toEqual([4, 4, 4, 2]);
     expect(days[0].segments[3].note).toBe('Test');
+  });
+
+  it('keeps morning availability markers from desktop timeline days', () => {
+    const slots = [
+      { id: '1', date: '2026-05-11', startTime: '07:00', endTime: '08:00', availableLanes: 3, note: null }
+    ];
+
+    const days = buildMobileTimelineDays(slots, ['2026-05-11']);
+
+    expect(days[0].hasMorningAvailability).toBe(true);
   });
 });

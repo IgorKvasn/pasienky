@@ -41,7 +41,10 @@
 
       @for (day of timelineDays(); track $index) {
         <div class="timeline-row">
-          <div class="timeline-day-label">{{ day.date | date: 'EEE dd.MM.' }}</div>
+          <div
+            class="timeline-day-label"
+            [class.morning-availability]="day.hasMorningAvailability"
+          >{{ day.date | date: 'EEE dd.MM.' }}</div>
           <div class="timeline-bar">
             @for (segment of day.segments; track segment.startTime + '-' + segment.endTime) {
               <div
@@ -86,6 +89,7 @@
             class="day-tab"
             [class.active]="i === selectedDayIndex()"
             [class.disabled]="!hasDayData(day)"
+            [class.morning-availability]="day.hasMorningAvailability"
             [disabled]="!hasDayData(day)"
             (click)="selectDay(i)"
           >{{ day.date | date: 'EEE' }}<span class="day-tab-date">{{ day.date | date: 'dd.MM.' }}</span></button>

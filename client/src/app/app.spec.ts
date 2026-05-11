@@ -206,6 +206,28 @@ describe('App', () => {
       expect(tabs[0].classList.contains('active')).toBe(false);
     });
 
+    it('marks day controls with at least 3 lanes between 07:00 and 08:00', async () => {
+      const fixture = TestBed.createComponent(App);
+      const days = fixture.componentInstance['timelineDays']();
+      flushAll([
+        { id: '1', date: days[0]?.date, startTime: '06:00', endTime: '08:00', availableLanes: 3, note: null },
+        { id: '2', date: days[1]?.date, startTime: '07:00', endTime: '08:00', availableLanes: 2, note: null },
+        { id: '3', date: days[2]?.date, startTime: '08:00', endTime: '10:00', availableLanes: 4, note: null }
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const desktopLabels = fixture.nativeElement.querySelectorAll('.desktop-timeline .timeline-row .timeline-day-label');
+      const mobileTabs = fixture.nativeElement.querySelectorAll('.day-tab');
+
+      expect(desktopLabels[0].classList.contains('morning-availability')).toBe(true);
+      expect(desktopLabels[1].classList.contains('morning-availability')).toBe(false);
+      expect(desktopLabels[2].classList.contains('morning-availability')).toBe(false);
+      expect(mobileTabs[0].classList.contains('morning-availability')).toBe(true);
+      expect(mobileTabs[1].classList.contains('morning-availability')).toBe(false);
+      expect(mobileTabs[2].classList.contains('morning-availability')).toBe(false);
+    });
+
     it('disables mobile day tabs that have no data', async () => {
       const fixture = TestBed.createComponent(App);
       const days = fixture.componentInstance['timelineDays']();
